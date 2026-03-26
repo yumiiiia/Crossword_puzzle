@@ -1,0 +1,139 @@
+let crossword = document.getElementById("crossword");
+let scoreDisplay = document.getElementById("score");
+let score = 0;
+let clueNumber = 0;
+
+// Words + hints with NEW positions
+let words = [
+  {answer: "NAMESPACE", row: 1, col: 1, direction: "across", hint: "Organizes code into logical groups"},
+  {answer: "DELEGATE", row: 2, col: 4, direction: "across", hint: "Type-safe function pointer"},
+  {answer: "SEALED", row: 1, col: 5, direction: "down", hint: "Prevents a class from being inherited"},
+  {answer: "ASYNC", row: 3, col: 5, direction: "across", hint: "Keyword for asynchronous methods"},
+  {answer: "CLASS", row: 3, col: 9, direction: "down", hint: "Blueprint for creating objects"},
+  {answer: "USING", row: 7, col: 8, direction: "across", hint: "Directive for namespaces"},
+  {answer: "VIRTUAL", row: 6, col: 10, direction: "down", hint: "Allows overriding"},
+  {answer: "EVENT", row: 9, col: 6, direction: "across", hint: "Messaging mechanism"},
+  {answer: "NEW", row: 9, col: 9, direction: "down", hint: "Keyword to create a new object"},
+  {answer: "", row: 0, col: 14, direction: "down", hint: ""},
+  {answer: "", row: 4, col: 7, direction: "down", hint: ""}
+];
+
+// Build grid dynamically
+let maxRow = 0, maxCol = 0;
+words.forEach(word => {
+  if (word.direction === "across") {
+    maxRow = Math.max(maxRow, word.row);
+    maxCol = Math.max(maxCol, word.col + word.answer.length);
+  } else {
+    maxRow = Math.max(maxRow, word.row + word.answer.length);
+    maxCol = Math.max(maxCol, word.col);
+  }
+});
+let solution = Array.from({length: maxRow+2}, () => Array(maxCol+2).fill(""));
+
+// Place words
+words.forEach(word => {
+  for (let i = 0; i < word.answer.length; i++) {
+    if (word.direction === "across") {
+      solution[word.row][word.col + i] = word.answer[i];
+    } else {
+      solution[word.row + i][word.col] = word.answer[i];
+    }
+  }
+});
+
+// Render grid
+for (let row = 0; row < solution.length; row++) {
+  for (let col = 0; col < solution[row].length; col++) {
+    let cell = document.createElement("div");
+    cell.className = "cell";
+    if (solution[row][col] !== "") {
+      let input = document.createElement("input");
+      input.maxLength = 1;
+      input.correct = false;
+
+      // Auto-fill ONLY the very first letter of each word
+      let isStartOfWord = false;
+      words.forEach(word => {
+        if (word.direction === "across" && row === word.row && col === word.col) {
+          isStartOfWord = true;
+        }
+        if (word.direction === "down" && col === word.col && row === word.row) {
+          isStartOfWord = true;
+        }
+      });
+
+      if (isStartOfWord) {
+        input.value = solution[row][col]; // show starting letter
+        input.disabled = true;            // lock only that one cell
+        input.style.background = "#eee";  // grey background
+      }
+
+      input.oninput = () => {
+        if (input.value.toUpperCase() === solution[row][col]) {
+          if (!input.correct) {
+            score++;
+            input.correct = true;
+          }
+          scoreDisplay.textContent = score;
+          input.style.background = "#cfc";
+        } else {
+          if (input.correct) {
+            score--;
+            input.correct = false;
+          }
+          scoreDisplay.textContent = score;
+          input.style.background = "#fcc";
+        }
+      };
+      cell.appendChild(input);
+
+      // Numbering
+      let isAcrossStart = (col === 0 || solution[row][col-1] === "") &&
+                          (col+1 < solution[row].length && solution[row][col+1] !== "");
+      let isDownStart = (row === 0 || solution[row-1][col] === "") &&
+                        (row+1 < solution.length && solution[row+1][col] !== "");
+
+      if (isAcrossStart || isDownStart) {
+        let num = document.createElement("div");
+        num.className = "number";
+        num.textContent = ++clueNumber;
+        cell.appendChild(num);
+      }
+    } else {
+      cell.style.background = "#ccc";
+    }
+    crossword.appendChild(cell);
+  }
+}
+
+// Render clues at the bottom
+let acrossClues = [
+  "N - Organizes code into logical groups ",
+  "D - Type-safe function pointer ",
+  "U - Directive for namespaces ",
+  "A - Keyword for asynchronous methods",
+  "E - Messaging mechanism "
+];
+
+let downClues = [
+  "V - Allows overriding ",
+  "S - Prevents a class from being inherited ",
+  "C - Blueprint for creating objects",
+  "N - Keyword to create a new object"
+  
+];
+
+let acrossList = document.getElementById("across");
+acrossClues.forEach(c => {
+  let li = document.createElement("li");
+  li.textContent = c;
+  acrossList.appendChild(li);
+});
+
+let downList = document.getElementById("down");
+downClues.forEach(c => {
+  let li = document.createElement("li");
+  li.textContent = c;
+  downList.appendChild(li);
+});
